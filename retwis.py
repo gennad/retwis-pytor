@@ -35,6 +35,8 @@ python ./retwis.py
 
 """
 
+import json
+
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
@@ -64,13 +66,15 @@ class Application(tornado.web.Application):
             (r"/follow", FollowHandler),
             (r"/register", RegisterHandler),
             (r"/timeline", TimelineHandler),
+            #("/api/(\d+)?/?", APIHandler),
+            ("/api/(\w+)", APIHandler),
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             ui_modules={"Post": PostModule},
             cookie_secret="11oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
-            xsrf_cookies=True,
+            xsrf_cookies=False,
         )
         tornado.web.Application.__init__(self, handlers, **settings)
         tornado.options.parse_command_line()
@@ -131,9 +135,11 @@ class MainHandler(BaseHandler):
 
 class TimelineHandler(BaseHandler):
     def get(self):
-        last_users = self.get_client().sort("global:users", 0, 10, None, "uid:*:username", True)
+        last_users = self.get_client().sort("global:users", 0, 10, None,
+                "uid:*:username", True)
         last_posts = self.get_client().lrange("global:timeline", 0, 50)
-        self.render("timeline.html", posts=last_posts, users=last_users, client=self.get_client())        
+        self.render("timeline.html", posts=last_posts, users=last_users,
+                client=self.get_client())
 
 
 class PostHandler(BaseHandler):
@@ -181,7 +187,8 @@ class ProfileHandler(BaseHandler):
             self.do_error("User not found.")
             return
 
-        is_following = self.get_client().sismember("uid:" + user['user_id'] + ":following", member_id)
+        is_following = self.get_client().sismember("uid:" + user['user_id'] +
+                ":following", member_id)
         logging.info(user['username'] + " following " + member_name + " ? " + str(is_following))
 
         posts = self.get_client().lrange("uid:" + member_id + ":posts", 0, 10)
@@ -294,6 +301,35 @@ class PostModule(tornado.web.UIModule):
         data = post_list[2]
         username = client.get("uid:" + post_list[0] + ":username")
         return self.render_string("modules/post.html", post=data, elapsed=elapsed, username=username)
+
+
+
+class APIHandler(tornado.web.RequestHandler):
+    """Handler for API requests."""
+    def get(self, post_id):
+        if post_id:
+            # return the requested post
+            return
+        # return all of the posts
+
+    def put(self, post_id):
+        if post_id:
+            # update the requested post
+            return
+        # use your imagination
+
+    def post(self, action):
+        if action:
+            dic = json.loads(self.request.body)
+            self.write("OKK")
+        # use your imagination
+        # create a new post
+
+    def delete(self, post_id):
+        if post_id:
+            # delete the requested post
+            return
+        # delete all of the posts 
 
 
 def main():
