@@ -11,6 +11,8 @@ Usage
 Dependencies
 ------------
     * Redis (redis.io)
+    On Ubuntu/Debian: 
+    $ sudo apt-get install redis-server
+    $ sudo pip install redis
     * Tornado (tornadoweb.org)
-    * Redis-Py (https://github.com/andymccurdy/redis-py)
-
+    $ sudo pip install tornado
