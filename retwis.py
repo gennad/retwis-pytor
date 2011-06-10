@@ -32,10 +32,10 @@ Redis: http://redis.io
 
 Usage:
 python ./retwis.py
-
 """
 
 import json
+import random
 
 import tornado.httpserver
 import tornado.ioloop
@@ -60,14 +60,15 @@ class Application(tornado.web.Application):
             (r"/", MainHandler),
             (r"/home", MainHandler),
             (r"/post", PostHandler),
-            (r"/logout", LogoutHandler),
+            (r"/logout/", LogoutHandler),
             (r"/login", LoginHandler),
             (r"/profile", ProfileHandler),
             (r"/follow", FollowHandler),
             (r"/register/(\w*)", RegisterHandler),
-            (r"/timeline", TimelineHandler),
+            (r"/timeline/", TimelineHandler),
             #("/api/(\d+)?/?", APIHandler),
-            ("/api/(\w*)", APIHandler),
+            ("/api/register/", APIRegister),
+            ("/api/(\w*)/*", APIHandler),
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
@@ -98,6 +99,11 @@ class BaseHandler(tornado.web.RequestHandler):
             logging.info("No user_id for cookie found in redis ")
             return None
 
+        username = self.get_client().get("uid:" + user_id + ":username")
+        return dict(user_id=user_id, username=username)
+
+
+    def get_api_user(self, user_id):
         username = self.get_client().get("uid:" + user_id + ":username")
         return dict(user_id=user_id, username=username)
 
@@ -292,7 +298,7 @@ class PostModule(tornado.web.UIModule):
         if (diff < 60): return str(int(diff)) + (" seconds" if diff > 1 else " second")
         if (diff < 3600): return str(int(diff/60)) + (" minutes" if (diff/60) > 1 else " minute")
         if (diff < 3600*24): return str(int(diff/3600)) + (" hours" if (diff/3600) > 1 else " hour") 
-        return str(int(diff/(3600*24))) + " " + ("days" if (diff/(3600*24)) > 1 else "day")        
+        return str(int(diff/(3600*24))) + " " + ("days" if (diff/(3600*24)) > 1 else "day")
 
     def render(self, post, client):
         post_data = client.get("post:" + post)
@@ -303,17 +309,63 @@ class PostModule(tornado.web.UIModule):
         username = client.get("uid:" + post_list[0] + ":username")
         return self.render_string("modules/post.html", post=data, elapsed=elapsed, username=username)
 
+class APIRegister(BaseHandler):
+    def get(self):
+        return self.render("api_register.html")
+    def post(self):
+        user = self.get_current_user();
+        if user:
+            self.redirect("/home")
+        else:
+            username = self.get_argument("username", None)
+            password = self.get_argument("password", None)
+            passconf = self.get_argument("passconf", None)
+            if not username or not password:
+                self.do_error("You must enter a username and password to register.")
+                return
+            if password != passconf:
+                self.do_error("Your password does not match.")
+                return
 
-class APIHandler(tornado.web.RequestHandler):
+            hash = self.generate_hash()
+
+            # check if username is available
+            if (self.get_client().get("username:" + username + ":id")):
+                self.do_error("Sorry, the selected username is already taken.")
+                return
+
+            # register the user
+            user_id = str(self.get_client().incr("global:nextUserId"))
+            self.get_client().set("uid:" + user_id + ":username", username)
+            self.get_client().set("uid:" + user_id + ":password", password)
+            self.get_client().set("hash:" + str(hash) + ":id", user_id)
+            self.get_client().set("username:" + username + ":id", user_id)
+            self.get_client().sadd("global:users", user_id) # add to global users
+            self.save_auth_token(user_id)
+
+            self.render("api_registered.html", username=username, hash=hash)
+
+    def generate_hash(self):
+        random.seed()
+        hash = random.getrandbits(128)
+        return hash
+
+    def get_md5_digest(self, st):
+        import md5
+        m = md5.new()
+        m.update(st)
+        return m.digest()
+
+
+class APIHandler(BaseHandler):
     """Handler for API requests."""
     def get(self, action):
         if not action:
             # Render documentation
             return self.render("api.html")
-        if action == 'register':
+        if action == 'doc':
             # Register app
-            return self.render("api_register.html")
-
+            return self.render("api_doc.html")
 
             # return the requested post
         # return all of the posts
@@ -327,8 +379,31 @@ class APIHandler(tornado.web.RequestHandler):
     def post(self, action):
         if action:
             dic = json.loads(self.request.body)
-            if not check_hash(dic['hash']):
+            import pdb; pdb.set_trace()
+            user_id = self.check_hash(dic['hash'])
+            if not user_id:
                 pass
+
+            # create the post
+            user = self.get_api_user(user_id)
+            status = string.replace(dic['status'], "\n", "")
+            post_id = self.get_client().incr("global:nextPostId")
+            post = user['user_id'] + "|" + str(time.time()) + "|" + status
+            self.get_client().set("post:" + str(post_id), post)
+
+            # get all followers
+            followers = self.get_client().smembers("uid:" + user['user_id'] + ":followers")
+            if not followers: followers = set()
+            followers.add(user['user_id'])
+
+            # push the post to all followers
+            for fid in followers:
+                self.get_client().lpush('uid:' + fid + ":posts", post_id)
+
+            # push the post to the timeline and trim the timeline to 1000 elements
+            self.get_client().lpush('global:timeline', post_id);
+            self.get_client().ltrim('global:timeline', 0, 1000);
+
             self.write("OKK")
         # use your imagination
         # create a new post
@@ -339,10 +414,16 @@ class APIHandler(tornado.web.RequestHandler):
             return
         # delete all of the posts 
 
+    def check_hash(self, hash):
+        user_id = self.get_client().get("hash:" + hash + ":id")
+        if not user_id:
+            return None
+
+        return user_id
+
 class Auth:
     def check_hash(self):
         pass
-
 
 def main():
     tornado.options.parse_command_line()

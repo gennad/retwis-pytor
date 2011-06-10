@@ -1,7 +1,7 @@
 import urllib2
 import json
 # Whatever structure you need to send goes here:
-hash = 'testhash'
+hash = '57132716327467367173128543205886802271'
 status = """\
 This is a new test status
 """
