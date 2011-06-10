@@ -64,10 +64,10 @@ class Application(tornado.web.Application):
             (r"/login", LoginHandler),
             (r"/profile", ProfileHandler),
             (r"/follow", FollowHandler),
-            (r"/register", RegisterHandler),
+            (r"/register/(\w*)", RegisterHandler),
             (r"/timeline", TimelineHandler),
             #("/api/(\d+)?/?", APIHandler),
-            ("/api/(\w+)", APIHandler),
+            ("/api/(\w*)", APIHandler),
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
@@ -252,6 +252,7 @@ class RegisterHandler(BaseHandler):
             self.render("registered.html", username=username)
 
 
+
 class LoginHandler(BaseHandler):
     def post(self):
         if not self.current_user:
@@ -303,13 +304,18 @@ class PostModule(tornado.web.UIModule):
         return self.render_string("modules/post.html", post=data, elapsed=elapsed, username=username)
 
 
-
 class APIHandler(tornado.web.RequestHandler):
     """Handler for API requests."""
-    def get(self, post_id):
-        if post_id:
+    def get(self, action):
+        if not action:
+            # Render documentation
+            return self.render("api.html")
+        if action == 'register':
+            # Register app
+            return self.render("api_register.html")
+
+
             # return the requested post
-            return
         # return all of the posts
 
     def put(self, post_id):
@@ -321,6 +327,8 @@ class APIHandler(tornado.web.RequestHandler):
     def post(self, action):
         if action:
             dic = json.loads(self.request.body)
+            if not check_hash(dic['hash']):
+                pass
             self.write("OKK")
         # use your imagination
         # create a new post
@@ -330,6 +338,10 @@ class APIHandler(tornado.web.RequestHandler):
             # delete the requested post
             return
         # delete all of the posts 
+
+class Auth:
+    def check_hash(self):
+        pass
 
 
 def main():
