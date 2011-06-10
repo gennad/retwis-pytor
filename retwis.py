@@ -48,7 +48,7 @@ import uuid
 
 from tornado.options import define, options
 
-define("port", default=8888, help="run on the given port", type=int)
+define("port", default=80, help="run on the given port", type=int)
 define("redis_host", default="localhost", help="redis server")
 define("redis_port", default=6379, help="redis port", type=int)
 
