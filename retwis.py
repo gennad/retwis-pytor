@@ -314,6 +314,7 @@ class PostModule(tornado.web.UIModule):
         data = post_list[2]
         data = Validator.validate(data)
         username = client.get("uid:" + post_list[0] + ":username")
+        username = Validator.validate(username)
         return self.render_string("modules/post.html", post=data, elapsed=elapsed, username=username)
 
 class APIRegister(BaseHandler):
