@@ -36,6 +36,7 @@ python ./retwis.py
 
 import json
 import random
+import re
 
 import tornado.httpserver
 import tornado.ioloop
@@ -246,6 +247,12 @@ class RegisterHandler(BaseHandler):
                 return
             if password != passconf:
                 self.do_error("Your password does not match.")
+                return
+            pattern = '^[a-zA-Z0-9_-]+$'
+            prog = re.compile(pattern)
+            result = prog.match(username)
+            if not result:
+                self.do_error("Your username is not valid.")
                 return
 
             # check if username is available
