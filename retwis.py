@@ -66,7 +66,7 @@ class Application(tornado.web.Application):
             (r"/profile", ProfileHandler),
             (r"/follow", FollowHandler),
             (r"/register/(\w*)", RegisterHandler),
-            (r"/timeline/", TimelineHandler),
+            #(r"/timeline/", TimelineHandler),
             #("/api/(\d+)?/?", APIHandler),
             ("/api/register/", APIRegister),
             ("/api/(\w*)/*", APIHandler),
