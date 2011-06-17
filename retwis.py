@@ -131,23 +131,23 @@ class MainHandler(BaseHandler):
             following = self.get_client().scard("uid:" + user['user_id'] + ":following")
 
             # posts
+            """
+            Only user's posts:
             posts = self.get_client().lrange("uid:" + user['user_id'] + ":posts", start, (start + count))
             if posts is None:
                 posts = []
-            for post in posts:
-                post = Validator.validate(post)
+            """
+            # All posts
+            posts = self.get_client().lrange("global:timeline", 0, 50)
 
             # render page
             self.render("home.html", posts=posts, client=self.get_client(), followers=followers, following=following)            
-
 
 class TimelineHandler(BaseHandler):
     def get(self):
         last_users = self.get_client().sort("global:users", 0, 10, None,
                 "uid:*:username", True)
         last_posts = self.get_client().lrange("global:timeline", 0, 50)
-        for post in last_posts:
-            post = Validator.validate(post)
         self.render("timeline.html", posts=last_posts, users=last_users,
                 client=self.get_client())
 
