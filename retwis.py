@@ -58,7 +58,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
-            (r"/home", MainHandler),
+            (r"/home/", MainHandler),
             (r"/post", PostHandler),
             (r"/logout/", LogoutHandler),
             (r"/login", LoginHandler),
