@@ -134,6 +134,8 @@ class MainHandler(BaseHandler):
             posts = self.get_client().lrange("uid:" + user['user_id'] + ":posts", start, (start + count))
             if posts is None:
                 posts = []
+            for post in posts:
+                post = Validator.validate(post)
 
             # render page
             self.render("home.html", posts=posts, client=self.get_client(), followers=followers, following=following)            
@@ -144,6 +146,8 @@ class TimelineHandler(BaseHandler):
         last_users = self.get_client().sort("global:users", 0, 10, None,
                 "uid:*:username", True)
         last_posts = self.get_client().lrange("global:timeline", 0, 50)
+        for post in last_posts:
+            post = Validator.validate(post)
         self.render("timeline.html", posts=last_posts, users=last_users,
                 client=self.get_client())
 
@@ -155,6 +159,8 @@ class PostHandler(BaseHandler):
 
         # create the post
         status = string.replace(self.get_argument("status"), "\n", "")
+        status = Validator.validate(status)
+
         post_id = self.get_client().incr("global:nextPostId")
         post = user['user_id'] + "|" + str(time.time()) + "|" + status
         self.get_client().set("post:" + str(post_id), post)
@@ -424,6 +430,21 @@ class APIHandler(BaseHandler):
 class Auth:
     def check_hash(self):
         pass
+
+
+class Validator:
+    html_escape_table = {
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&apos;",
+        ">": "&gt;",
+        "<": "&lt;",
+    }
+
+    @staticmethod
+    def validate(text):
+        """Produce entities within text."""
+        return "".join(Validator.html_escape_table.get(c,c) for c in text)
 
 def main():
     tornado.options.parse_command_line()
