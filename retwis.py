@@ -386,7 +386,6 @@ class APIHandler(BaseHandler):
     def post(self, action):
         if action:
             dic = json.loads(self.request.body)
-            import pdb; pdb.set_trace()
             user_id = self.check_hash(dic['hash'])
             if not user_id:
                 pass
