@@ -312,7 +312,6 @@ class PostModule(tornado.web.UIModule):
         post_list = post_data.split("|", 3)
         elapsed = self.get_elapsed(post_list[1])
         data = post_list[2]
-        import pdb; pdb.set_trace()
         Validator.validate(data)
         username = client.get("uid:" + post_list[0] + ":username")
         return self.render_string("modules/post.html", post=data, elapsed=elapsed, username=username)
