@@ -61,7 +61,7 @@ class Application(tornado.web.Application):
             (r"/home/", MainHandler),
             (r"/post", PostHandler),
             (r"/logout/", LogoutHandler),
-            (r"/login", LoginHandler),
+            (r"/login/", LoginHandler),
             (r"/profile", ProfileHandler),
             (r"/follow", FollowHandler),
             (r"/register/(\w*)", RegisterHandler),
@@ -179,7 +179,7 @@ class PostHandler(BaseHandler):
         self.get_client().ltrim('global:timeline', 0, 1000);
 
         # refresh the page
-        self.redirect("/home")
+        self.redirect("/home/")
 
 
 class ProfileHandler(BaseHandler):
@@ -233,10 +233,10 @@ class FollowHandler(BaseHandler):
 
 
 class RegisterHandler(BaseHandler):
-    def post(self):
+    def post(self, param):
         user = self.get_current_user();
         if user:
-            self.redirect("/home")
+            self.redirect("/home/")
         else:
             username = self.get_argument("username", None)
             password = self.get_argument("password", None)
@@ -285,15 +285,15 @@ class LoginHandler(BaseHandler):
                 return
 
             self.save_auth_token(user_id)
-            self.redirect("/home")
+            self.redirect("/home/")
         else:
-            self.redirect("/home")
+            self.redirect("/home/")
 
 
 class LogoutHandler(BaseHandler):
     def get(self):
         self.clear_cookie("auth")
-        self.redirect("/home")
+        self.redirect("/home/")
 
 
 class PostModule(tornado.web.UIModule):
@@ -322,7 +322,7 @@ class APIRegister(BaseHandler):
     def post(self):
         user = self.get_current_user();
         if user:
-            self.redirect("/home")
+            self.redirect("/home/")
         else:
             username = self.get_argument("username", None)
             password = self.get_argument("password", None)
@@ -434,9 +434,6 @@ class Auth:
 
 class Validator:
     html_escape_table = {
-        "&": "&amp;",
-        '"': "&quot;",
-        "'": "&apos;",
         ">": "&gt;",
         "<": "&lt;",
     }

@@ -5,7 +5,7 @@
     <div id="registerbox">
         <h2>Register!</h2>
         <b>Want to try Retwis? Create an account!</b>
-        <form method="POST" action="/register">
+        <form method="POST" action="/register/">
             {{ xsrf_form_html() }}
             <table>
                 <tr>
@@ -23,7 +23,7 @@
             </table>
         </form>
         <h2>Already registered? Login here</h2>
-        <form method="POST" action="/login">
+        <form method="POST" action="/login/">
             {{ xsrf_form_html() }}
             <table>
                 <tr>
