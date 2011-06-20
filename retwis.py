@@ -324,6 +324,11 @@ class PostModule(tornado.web.UIModule):
         elapsed = self.get_elapsed(post_list[1])
         data = post_list[2]
         data = Validator.validate(data)
+        splitted = data.split()
+        for word in split:
+            if len(word) > 100:
+                word = word[0:50]
+        data = ''.join(splitted)
         username = client.get("uid:" + post_list[0] + ":username")
         if len(username) > 30:
             username = username[0:30]
