@@ -331,7 +331,7 @@ class PostModule(tornado.web.UIModule):
 
         splitted = data.split()
         splitted = map(lambda x: x[0:100] if len(x) > 100 else x, splitted)
-        data = ''.join(splitted)
+        data = ' '.join(splitted)
 
         username = client.get("uid:" + post_list[0] + ":username")
         if len(username) > 30:
