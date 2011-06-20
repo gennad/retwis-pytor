@@ -7,7 +7,10 @@ import sys
 # ------------------------------- TYPER HERE YOUR HASCODE ----------------------------------
 HASHCODE = ''
 # ------------------------------------------------------------------------------------------
-from keys import HASHCODE
+try:
+    from keys import HASHCODE
+except ImportError:
+    pass
 
 if len(sys.argv) < 2:
     print """\
