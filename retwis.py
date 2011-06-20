@@ -255,6 +255,10 @@ class RegisterHandler(BaseHandler):
                 self.do_error("Your username is not valid.")
                 return
 
+            if len(username) > 30:
+                self.do_error("The length of username can not be more than 30 letters.")
+                return
+
             # check if username is available
             if (self.get_client().get("username:" + username + ":id")):
                 self.do_error("Sorry, the selected username is already taken.")
@@ -321,6 +325,8 @@ class PostModule(tornado.web.UIModule):
         data = post_list[2]
         data = Validator.validate(data)
         username = client.get("uid:" + post_list[0] + ":username")
+        if len(username) > 30:
+            username = username[0:30]
         username = Validator.validate(username)
         return self.render_string("modules/post.html", post=data, elapsed=elapsed, username=username)
 
@@ -450,6 +456,62 @@ class Validator:
     def validate(text):
         """Produce entities within text."""
         return "".join(Validator.html_escape_table.get(c,c) for c in text)
+
+
+class MessageMixin(object):
+    waiters = []
+    cache = []
+    cache_size = 200
+
+    def wait_for_messages(self, callback, cursor=None):
+        cls = MessageMixin
+        if cursor:
+            index = 0
+            for i in xrange(len(cls.cache)):
+                index = len(cls.cache) - i - 1
+                if cls.cache[index]["id"] == cursor:
+                    break
+
+            recent = cls.cache[index + 1:]
+            if recent:
+                callback(recent)
+                return
+        cls.waiters.append(callback)
+
+    def new_messages(self, messages):
+        cls = MessageMixin
+        logging.info("Sending new message to %r listeners", len(cls.waiters))
+        for callback in cls.waiters:
+            try:
+                callback(messages)
+            except:
+                logging.error("Error in waiter callback", exc_info=True)
+        cls.waiters = []
+        cls.cache.extend(messages)
+        if len(cls.cache) > self.cache_size:
+            cls.cache = cls.cache[-self.cache_size:]
+
+
+class MessageUpdatesHandler(BaseHandler, MessageMixin):
+    @tornado.web.asynchronous
+    def post(self):
+        cursor = self.get_argument("cursor", None)
+        self.wait_for_messages(self.async_callback(self.on_new_messages),
+                               cursor=cursor)
+
+    def on_new_messages(self, messages):
+        # Closed client connection
+        if self.request.connection.stream.closed():
+            return
+        self.finish(dict(messages=messages))
+
+
+class BaseHandler(tornado.web.RequestHandler):
+    def get_current_user(self):
+        user_json = self.get_secure_cookie("user")
+        if not user_json: return None
+        return tornado.escape.json_decode(user_json)
+
 
 def main():
     tornado.options.parse_command_line()
