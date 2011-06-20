@@ -164,7 +164,7 @@ class PostHandler(BaseHandler):
 
         splitted = status.split()
         splitted = map(lambda x: x[0:100] if len(x) > 100 else x, splitted)
-        status = ''.join(splitted)
+        status = ' '.join(splitted)
 
         post_id = self.get_client().incr("global:nextPostId")
         post = user['user_id'] + "|" + str(time.time()) + "|" + status
