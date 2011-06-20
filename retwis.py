@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#splitted!/usr/bin/env python
 #
 # Copyright (c) 2011 Andrew Zeneski
 #
@@ -162,6 +162,10 @@ class PostHandler(BaseHandler):
         status = string.replace(self.get_argument("status"), "\n", "")
         status = Validator.validate(status)
 
+        splitted = status.split()
+        splitted = map(lambda x: x[0:100] if len(x) > 100 else x, splitted)
+        status = ''.join(splitted)
+
         post_id = self.get_client().incr("global:nextPostId")
         post = user['user_id'] + "|" + str(time.time()) + "|" + status
         self.get_client().set("post:" + str(post_id), post)
@@ -324,11 +328,11 @@ class PostModule(tornado.web.UIModule):
         elapsed = self.get_elapsed(post_list[1])
         data = post_list[2]
         data = Validator.validate(data)
+
         splitted = data.split()
-        for word in split:
-            if len(word) > 100:
-                word = word[0:50]
+        splitted = map(lambda x: x[0:100] if len(x) > 100 else x, splitted)
         data = ''.join(splitted)
+
         username = client.get("uid:" + post_list[0] + ":username")
         if len(username) > 30:
             username = username[0:30]
