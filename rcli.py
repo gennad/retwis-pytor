@@ -19,7 +19,7 @@ status = ' '.join(status)
 
 jdata = json.dumps({"hash": HASHCODE, "status": status})
 
-f = urllib2.urlopen("http://127.0.0.1:80/api/message", jdata)
+f = urllib2.urlopen("http://ci.local/api/message", jdata)
 print f.read()
 
 """
