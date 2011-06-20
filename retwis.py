@@ -343,37 +343,33 @@ class APIRegister(BaseHandler):
     def get(self):
         return self.render("api_register.html")
     def post(self):
-        user = self.get_current_user();
-        if user:
-            self.redirect("/home/")
-        else:
-            username = self.get_argument("username", None)
-            password = self.get_argument("password", None)
-            passconf = self.get_argument("passconf", None)
-            if not username or not password:
-                self.do_error("You must enter a username and password to register.")
-                return
-            if password != passconf:
-                self.do_error("Your password does not match.")
-                return
+        username = self.get_argument("username", None)
+        password = self.get_argument("password", None)
+        passconf = self.get_argument("passconf", None)
+        if not username or not password:
+            self.do_error("You must enter a username and password to register.")
+            return
+        if password != passconf:
+            self.do_error("Your password does not match.")
+            return
 
-            hash = self.generate_hash()
+        hash = self.generate_hash()
 
-            # check if username is available
-            if (self.get_client().get("username:" + username + ":id")):
-                self.do_error("Sorry, the selected username is already taken.")
-                return
+        # check if username is available
+        if (self.get_client().get("username:" + username + ":id")):
+            self.do_error("Sorry, the selected username is already taken.")
+            return
 
-            # register the user
-            user_id = str(self.get_client().incr("global:nextUserId"))
-            self.get_client().set("uid:" + user_id + ":username", username)
-            self.get_client().set("uid:" + user_id + ":password", password)
-            self.get_client().set("hash:" + str(hash) + ":id", user_id)
-            self.get_client().set("username:" + username + ":id", user_id)
-            self.get_client().sadd("global:users", user_id) # add to global users
-            self.save_auth_token(user_id)
+        # register the user
+        user_id = str(self.get_client().incr("global:nextUserId"))
+        self.get_client().set("uid:" + user_id + ":username", username)
+        self.get_client().set("uid:" + user_id + ":password", password)
+        self.get_client().set("hash:" + str(hash) + ":id", user_id)
+        self.get_client().set("username:" + username + ":id", user_id)
+        self.get_client().sadd("global:users", user_id) # add to global users
+        self.save_auth_token(user_id)
 
-            self.render("api_registered.html", username=username, hash=hash)
+        self.render("api_registered.html", username=username, hash=hash)
 
     def generate_hash(self):
         random.seed()
@@ -433,7 +429,7 @@ class APIHandler(BaseHandler):
             self.get_client().lpush('global:timeline', post_id);
             self.get_client().ltrim('global:timeline', 0, 1000);
 
-            self.write("OKK")
+            self.write("OK")
         # use your imagination
         # create a new post
 

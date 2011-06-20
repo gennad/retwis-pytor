@@ -1,10 +1,28 @@
+#!/usr/bin/env python
 import urllib2
 import json
-
-1. Check if there is a file with information about login and hash
-
 import os
+import sys
 
+# ------------------------------- TYPER HERE YOUR HASCODE ----------------------------------
+HASHCODE = '106508756106473703728209052080049698794'
+# ------------------------------------------------------------------------------------------
+
+if len(sys.argv) < 2:
+    print """\
+Usage: ./rcli.py Some text
+"""
+    sys.exit(0)
+
+status = sys.argv[1:]
+status = ' '.join(status)
+
+jdata = json.dumps({"hash": HASHCODE, "status": status})
+
+f = urllib2.urlopen("http://127.0.0.1:80/api/message", jdata)
+print f.read()
+
+"""
 HOME_DIR = os.getenv("HOME")
 path = HOME_DIR + '/.retwis'
 
@@ -26,19 +44,11 @@ if not login or not hash:
 # Now go and register
 
 
-
-
-
-
-
-
 # Whatever structure you need to send goes here:
 hash = '57132716327467367173128543205886802271'
-status = """\
-This is a new test status
-"""
 
 jdata = json.dumps({"hash": hash, "status": status})
 
 f = urllib2.urlopen("http://127.0.0.1:80/api/message", jdata)
 print f.read()
+"""
